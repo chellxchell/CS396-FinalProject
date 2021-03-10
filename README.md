@@ -94,8 +94,12 @@ A buy-hold-sell trading strategy was adopted to evaluate the performance of stoc
 
 
 ## Training the Model
+Before describing how to train the models, let's go over the proposed RSR framework. First, historical time series data of each stock is fed into the Long Short-Term Memory (LSTM) network. The LSTM network is a special type of  Recurrent Neural Networks (RNNs) used in the proposed RSR model to capture the sequential dependencies and learn a stock-wise sequential embedding. Next, a Temporal Graph Convolution (TGC) is devised to account for stock relations in a time-sensitive way. Finally, the concatenation of sequential embeddings and relational embeddings is fed into a fully connected layer to obtain the ranking score of stocks.
+<img src="/blog_images/RSR.png" alt="RSR Framework" width="500">
+
+
 ### Training the Rank_LSRM Model
-To answer research question one, the Rank_LSTM method is used. The Long Short-Term Memory (LSTM) network is a special type of  Recurrent Neural Networks (RNNs) used in the proposed RSR model to capture the sequential dependencies and learn a stock-wise sequential embedding. However for the purposes of this experiment, the relational aspect of the model was removed for this model, i.e. this Rank_LSTM method ignores stock relations. This is done in order to see a basic solution and study primarily stock ranking formulation without the relation aspect.  
+To answer research question one, the Rank_LSTM method is used. However for the purposes of this experiment, the relational embedding layer was removed for this model, i.e. this Rank_LSTM method ignores stock relations. This is done in order to see a basic solution and study primarily stock ranking formulation without the relation aspect.  
 
 The following is the complete constructor for the RankLSTM class:
 ```
