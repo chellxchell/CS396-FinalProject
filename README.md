@@ -5,9 +5,9 @@ Relational Stock Ranking (RSR) is a new deep learning solution for stock predict
 * A demonstration of the effectiveness on these proposals on two real-world stock markets, NYSE and NASDAQ, that will be described later in this blog.
 
 ## Table of Contents
-*[Relevance](#relevance)
-*[The NYSE and NASDAQ Data](#the-nyse-and-nasdaq-data)
-*[Methodology](#methodology)
+* [Relevance](#relevance)
+* [The NYSE and NASDAQ Data](#the-nyse-and-nasdaq-data)
+* [Methodology](#methodology)
 
 ## Relevance
 There are existing traditional solutions for stock predictions that are based on time-series analysis, but these methods are stochastic, and hard to optimize without special knowledge of finance. There are also existing neural-network solutions, but these treat stocks as independent of each other and ignore relationships between different stocks in the same industry. RSR outperforms all of these methods with an average return ratio of 98& and 71% on NYSE and NASDAQ data.
