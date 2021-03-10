@@ -4,6 +4,7 @@ Relational Stock Ranking (RSR) is a new deep learning solution for stock predict
 ## The NYSE and NASDAQ Data
 To justify the method proposed by the authors, it was employed on two real-world markets, New York Stock Exchange (NYSE) and NASDAQ Stock Market (NASDAQ). Stocks from these markets that have transaction records between 01/02/2013 and 12/08/2017 were collected. Any stocks that didn't meet these conditions were filtered out of the data set: stocks must have been traded on more than 98% of trading days since 01/02/2013 to ensure no abnormal patterns occur; stocks must have never been traded at less than $5 per share during the collection period to ensure that the selected stocks are not penny stocks. Filtering out the stocks that did not meet these conditions resulted in 1,026 NASDAQ and 1,737 NYSE stocks. Three kinds of data were collected for these stocks: historical price data, sector-industry relations, and Wiki between their companies (ex. supplier-consumer relation).
 For sequential data, the authors aimed to predict a ranking list of stocks for the following trading day, based on the daily historical data in the last _S_ trading days. The code below loads the eod (end-of-day) data used in training:
+
 ```
 def load_EOD_data(data_path, market_name, tickers, steps=1):
     eod_data = []
@@ -43,3 +44,17 @@ def load_EOD_data(data_path, market_name, tickers, steps=1):
         base_price[index, :] = single_EOD[:, -1]
     return eod_data, masks, ground_truth, base_price
  ```
+ 
+To observe the trends that stocks under the same industry are similar influenced by, the sector-industry relation between stocks was collected. In NASDAQ and NYSE, each stock in the dataset was classigied into a sector and industry.  
+Additionally, the knowledge base Wikidata contains first-order and second-order company relations. A company _i_ has a first-order relation with company _j_ if there is a statement that _i_ and _j_ are the subject and object, respectively. A company _i_ has a second-order relation with the company _j_ if there is a statement that they share the same object. The example below loads the dataset and summarizes the shape of the loaded dataset.
+
+```
+def load_relation_data(relation_file):
+    relation_encoding = np.load(relation_file)
+    print('relation encoding shape:', relation_encoding.shape)
+    rel_shape = [relation_encoding.shape[0], relation_encoding.shape[1]]
+    mask_flags = np.equal(np.zeros(rel_shape, dtype=int),
+                          np.sum(relation_encoding, axis=2))
+    mask = np.where(mask_flags, np.ones(rel_shape) * -1e9, np.zeros(rel_shape))
+    return relation_encoding, mask
+```
