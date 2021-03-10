@@ -66,8 +66,8 @@ def load_relation_data(relation_file):
     mask = np.where(mask_flags, np.ones(rel_shape) * -1e9, np.zeros(rel_shape))
     return relation_encoding, mask
 ```
-<img src="/blog_images/industry_relation.png" alt="Schematic of Industry Relation" width="100">
-<img src="/blog_images/wikidata_relation.png" alt="Schematic of Wikidata Relation" width="100">
+<img src="/blog_images/industry_relation.png" alt="Schematic of Industry Relation" width="500">
+<img src="/blog_images/wikidata_relation.png" alt="Schematic of Wikidata Relation" width="500">
 
 
 ## Methodology
