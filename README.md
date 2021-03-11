@@ -1,7 +1,7 @@
 # Temporal Relational Ranking for Stock Prediction
-Relational Stock Ranking (RSR) is a new deep learning solution for stock prediction developed by the authors of [this paper](https://arxiv.org/pdf/1809.09441.pdf). The paper contributes the following:
+__Relational Stock Ranking (RSR)__ is a new deep learning solution for stock prediction developed by the authors of [this paper](https://arxiv.org/pdf/1809.09441.pdf). The paper contributes the following:
 * A proposal for a novel neural network-based framework, RSR, to solve the stock prediction problem in a learning-to-rank fashion
-* A proposal for a new component in the neural network modeling, called Temporal Graph Convolution (TGC) that explicitly and quickly captures the domain knowledge of stock relations
+* A proposal for a new component in the neural network modeling, called __Temporal Graph Convolution (TGC)__ that explicitly and quickly captures the domain knowledge of stock relations
 * A demonstration of the effectiveness on these proposals on two real-world stock markets, NYSE and NASDAQ, that will be described later in this blog.  
 
 In this blog post, we will discuss the relevance of the paper, introduce the data used and how it was loaded into the codebase, and describe the methodology used in the experiment. After this, we will describe how to train a model of Rank LSTM and a model of RSR, then evaluate those models, using the code from the paper as a guide.
@@ -67,7 +67,7 @@ def load_EOD_data(data_path, market_name, tickers, steps=1):
     return eod_data, masks, ground_truth, base_price
  ```
 ### Relational Data
-As discussed, one of the benefits to RSR is that it takes into account the relations between stocks in the same industry. To observe the trends that stocks under the same industry are similar influenced by, the sector-industry relation between stocks was collected. In NASDAQ and NYSE, each stock in the dataset was classified into a sector and industry.  
+As discussed, one of the benefits to __RSR__ is that it takes into account the relations between stocks in the same industry. To observe the trends that stocks under the same industry are similar influenced by, the sector-industry relation between stocks was collected. In NASDAQ and NYSE, each stock in the dataset was classified into a sector and industry.  
 Additionally, the knowledge base Wikidata contains first-order and second-order company relations. A company _i_ has a first-order relation with company _j_ if there is a statement that _i_ and _j_ are the subject and object, respectively. A company _i_ has a second-order relation with the company _j_ if there is a statement that they share the same object. The example below loads the dataset and summarizes the shape of the loaded dataset.
 
 ```
@@ -87,14 +87,14 @@ def load_relation_data(relation_file):
 ## Methodology
 When conducting their experiment, the authors aimed to answer the following research questions:
 1. How is the utility of formulating the stock prediction as a ranking task? Can the RSR solution outperform other prediction solutions?
-1. Do stock relations enhance the neural network-based solution for stock prediction? How effective is the proposed TGC component compared to conventional graph-based learning?
-1. How does the RSR solution perform under different back-testing strategies?  
+1. Do stock relations enhance the neural network-based solution for stock prediction? How effective is the proposed __TGC__ component compared to conventional graph-based learning?
+1. How does the __RSR__ solution perform under different back-testing strategies?  
 
 A buy-hold-sell trading strategy was adopted to evaluate the performance of stock prediction methods regarding revenue. The target of this experiment was to accurately predict the return ratio of stocks and rank the relative order of stocks. Mean Square Error (MSE), Mean Reciprocal Rank (MRR), and cumulative investment return ratio (IRR) were used to report model performance.  
 
 
 ## Training the Model
-Before describing how to train the models, let's go over the proposed RSR framework. First, historical time series data of each stock is fed into the Long Short-Term Memory (LSTM) network. The LSTM network is a special type of  Recurrent Neural Networks (RNNs) used in the proposed RSR model to capture the sequential dependencies and learn a stock-wise sequential embedding. Next, a Temporal Graph Convolution (TGC) is devised to account for stock relations in a time-sensitive way. Finally, the concatenation of sequential embeddings and relational embeddings is fed into a fully connected layer to obtain the ranking score of stocks.
+Before describing how to train the models, let's go over the proposed __RSR__ framework. First, historical time series data of each stock is fed into the __Long Short-Term Memory (LSTM)__ network. The __LSTM__ network is a special type of  Recurrent Neural Networks (RNNs) used in the proposed __RSR__ model to capture the sequential dependencies and learn a stock-wise sequential embedding. Next, a __Temporal Graph Convolution (TGC)__ is devised to account for stock relations in a time-sensitive way. Finally, the concatenation of sequential embeddings and relational embeddings is fed into a fully connected layer to obtain the ranking score of stocks.
 <img src="/blog_images/RSR.png" alt="RSR Framework" width="500">
 
 
@@ -466,9 +466,9 @@ if __name__ == '__main__':
     )
     pred_all = rank_LSTM.train()
 ```
-Rank_LSTM outperforms State Frequency Memory (SFM), which is a state-of-the-art neural network-based solution that models the historical data in a recurrent fashion. Rank_LSM also outperforms vanilla LSTM - this performance verifies the advantage of the stock ranking solutions and answers research question 1 that stock ranking is a promising formulation of stock prediction. However, its performance on NYSE is worse than SFM, perhaps because minimizing the combination of point-wise and pair-wise losses leads to a tradeoff between accurately predicting absolute value of return ratios.
+Rank_LSTM outperforms __State Frequency Memory (SFM)__, which is a state-of-the-art neural network-based solution that models the historical data in a recurrent fashion. Rank_LSM also outperforms vanilla __LSTM__ - this performance verifies the advantage of the stock ranking solutions and answers research question 1 that stock ranking is a promising formulation of stock prediction. However, its performance on NYSE is worse than SFM, perhaps because minimizing the combination of point-wise and pair-wise losses leads to a tradeoff between accurately predicting absolute value of return ratios.
 
-<img src="/blog_images/rank_lstm_performance.png" alt="Performance comparison of Rank_LSTM, SFM, and LSTM regarding IRR" width="500">
+<img src="/blog_images/rank_lstm_performance.png" alt="Performance comparison of Rank_LSTM, SFM, and LSTM regarding IRR" width="800">
 
 
 ### Training the Relational Stock Ranking Model
@@ -892,14 +892,108 @@ if __name__ == '__main__':
 ```
 Taking industry relations into account was more beneficial to stock ranking for NYSE than it was or NASDAQ, since NASDAQ is much more volatile and dominated by short-term factors. This model was compared to the __Graph Convolutional Network (GCN)__ method, a state-of-the-art graph-based learning method - this replaced the __Temporal Graph Convolution (TGC)__ layer in the RSR model. Another comparison was made to __Graph-based Ranking (GBR)__ - the graph regularization term was added to the loss function of __Rank_LSTM__. The authors found that __RSR_E__ (RSR with explicit modeling) and __RSR_I__ (RSR with implicit modeling) achieve improvement over both GCN and GBR, verifying the effectiveness of the proposed __TGC__ component.
 
-<img src="/blog_images/industry_relations_performance.png" alt="Back-testing procedure of relational ranking methods with industry relations regarding IRR" width="500">
+<img src="/blog_images/industry_relations_performance.png" alt="Back-testing procedure of relational ranking methods with industry relations regarding IRR" width="800">
 
 When considering the Wiki relation of stocks, the __RSR_E__ and __RSR_I__ achieve the best performance, further
 demonstrating the effectiveness of the __TGC__ component.
 
-<img src="/blog_images/wiki_relations_performance.png" alt="Performance comparison of relational ranking methods with Wiki relations regarding IRR" width="500">
+<img src="/blog_images/wiki_relations_performance.png" alt="Performance comparison of relational ranking methods with Wiki relations regarding IRR" width="800">
 
 ## Evaluating the Models
+The performance of the proposed methods was investigated under three different back-testing strategies, __Top1__, __Top5__, and __Top10__, buying stocks with top-1, 5, 10 highest expected revenue, respectively.  
 
+The following is the complete code for the evaluator:
+```
+def evaluate(prediction, ground_truth, mask, report=False):
+    assert ground_truth.shape == prediction.shape, 'shape mis-match'
+    performance = {}
+    performance['mse'] = np.linalg.norm((prediction - ground_truth) * mask)**2\
+        / np.sum(mask)
+    mrr_top = 0.0
+    all_miss_days_top = 0
+    bt_long = 1.0
+    bt_long5 = 1.0
+    bt_long10 = 1.0
+
+    for i in range(prediction.shape[1]):
+        rank_gt = np.argsort(ground_truth[:, i])
+        gt_top1 = set()
+        gt_top5 = set()
+        gt_top10 = set()
+        for j in range(1, prediction.shape[0] + 1):
+            cur_rank = rank_gt[-1 * j]
+            if mask[cur_rank][i] < 0.5:
+                continue
+            if len(gt_top1) < 1:
+                gt_top1.add(cur_rank)
+            if len(gt_top5) < 5:
+                gt_top5.add(cur_rank)
+            if len(gt_top10) < 10:
+                gt_top10.add(cur_rank)
+
+        rank_pre = np.argsort(prediction[:, i])
+
+        pre_top1 = set()
+        pre_top5 = set()
+        pre_top10 = set()
+        for j in range(1, prediction.shape[0] + 1):
+            cur_rank = rank_pre[-1 * j]
+            if mask[cur_rank][i] < 0.5:
+                continue
+            if len(pre_top1) < 1:
+                pre_top1.add(cur_rank)
+            if len(pre_top5) < 5:
+                pre_top5.add(cur_rank)
+            if len(pre_top10) < 10:
+                pre_top10.add(cur_rank)
+
+        # calculate mrr of top1
+        top1_pos_in_gt = 0
+        for j in range(1, prediction.shape[0] + 1):
+            cur_rank = rank_gt[-1 * j]
+            if mask[cur_rank][i] < 0.5:
+                continue
+            else:
+                top1_pos_in_gt += 1
+                if cur_rank in pre_top1:
+                    break
+        if top1_pos_in_gt == 0:
+            all_miss_days_top += 1
+        else:
+            mrr_top += 1.0 / top1_pos_in_gt
+
+        # back testing on top 1
+        real_ret_rat_top = ground_truth[list(pre_top1)[0]][i]
+        bt_long += real_ret_rat_top
+
+        # back testing on top 5
+        real_ret_rat_top5 = 0
+        for pre in pre_top5:
+            real_ret_rat_top5 += ground_truth[pre][i]
+        real_ret_rat_top5 /= 5
+        bt_long5 += real_ret_rat_top5
+
+        # back testing on top 10
+        real_ret_rat_top10 = 0
+        for pre in pre_top10:
+            real_ret_rat_top10 += ground_truth[pre][i]
+        real_ret_rat_top10 /= 10
+        bt_long10 += real_ret_rat_top10
+
+
+    performance['mrrt'] = mrr_top / (prediction.shape[1] - all_miss_days_top)
+    performance['btl'] = bt_long
+    # performance['btl5'] = bt_long5
+    # performance['btl10'] = bt_long10
+    return performance
+```
+__RSR_I__ fails to achieve the expected performance when ranking stocks in NASDAq and modeling their industry relations (NASDAQ-Industry setting), indicating less effectiveness of industry relations on NASDAQ. In other cases, the performance of each strategy is __Top1__>__Top5__>__Top10__. This could be because the ranking algorithm could accurately rank the relative order of stocks regarding future return ratios. Once the order is accurate, buying and selling the stock with higher expected profit would achieve higher cumulative return ratio.
+
+<img src="/blog_images/backtesting.png" alt=". Comparison on back-testing strategies (Top1, Top5, and Top10) w.r.t. IRR based on prediction of
+RSR_I" width="800">
 
 ## Summary
+In this blog post, you learned about the propose method __RSR__ for predicting stocks, and why it is superior to existing solutions. Specifically, you learned:
+* How to train a model to study stock ranking formation
+* How to train a model to examine the effect of industry relations
+* How to use back-testing strategies to evaluate the performance of those models
