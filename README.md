@@ -101,7 +101,7 @@ Before describing how to train the models, let's go over the proposed RSR framew
 ### Training the Rank_LSRM Model
 To answer research question one, the Rank_LSTM method is used. However for the purposes of this experiment, the relational embedding layer was removed for this model, i.e. this Rank_LSTM method ignores stock relations. This is done in order to see a basic solution and study primarily stock ranking formulation without the relation aspect.  
 
-The following is the complete constructor for the RankLSTM class:
+The following is the complete constructor for the `RankLSTM` class:
 ```
     def __init__(self, data_path, market_name, tickers_fname, parameters,
                  steps=1, epochs=50, batch_size=None, gpu=False):
@@ -467,6 +467,9 @@ if __name__ == '__main__':
     pred_all = rank_LSTM.train()
 ```
 Rank_LSTM outperforms State Frequency Memory (SFM), which is a state-of-the-art neural network-based solution that models the historical data in a recurrent fashion. Rank_LSM also outperforms vanilla LSTM - this performance verifies the advantage of the stock ranking solutions and answers research question 1 that stock ranking is a promising formulation of stock prediction. However, its performance on NYSE is worse than SFM, perhaps because minimizing the combination of point-wise and pair-wise losses leads to a tradeoff between accurately predicting absolute value of return ratios.
+
+<img src="/blog_images/rank_lstm_performance.png" alt="Performance comparison of Rank_LSTM, SFM, and LSTM regarding IRR" width="500">
+
 
 ### Training the Relational Stock Ranking Model
 To answer research question 2, the authors studied the effect of industry relations between stocks.  
@@ -887,6 +890,14 @@ if __name__ == '__main__':
 
     pred_all = RR_LSTM.train()
 ```
+Taking industry relations into account was more beneficial to stock ranking for NYSE than it was or NASDAQ, since NASDAQ is much more volatile and dominated by short-term factors. This model was compared to the __Graph Convolutional Network (GCN)__ method, a state-of-the-art graph-based learning method - this replaced the __Temporal Graph Convolution (TGC)__ layer in the RSR model. Another comparison was made to __Graph-based Ranking (GBR)__ - the graph regularization term was added to the loss function of __Rank_LSTM__. The authors found that __RSR_E__ (RSR with explicit modeling) and __RSR_I__ (RSR with implicit modeling) achieve improvement over both GCN and GBR, verifying the effectiveness of the proposed __TGC__ component.
+
+<img src="/blog_images/industry_relations_performance.png" alt="Back-testing procedure of relational ranking methods with industry relations regarding IRR" width="500">
+
+When considering the Wiki relation of stocks, the __RSR_E__ and __RSR_I__ achieve the best performance, further
+demonstrating the effectiveness of the __TGC__ component.
+
+<img src="/blog_images/wiki_relations_performance.png" alt="Performance comparison of relational ranking methods with Wiki relations regarding IRR" width="500">
 
 ## Evaluating the Models
 
