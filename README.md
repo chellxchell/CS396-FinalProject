@@ -1,31 +1,37 @@
 # Temporal Relational Ranking for Stock Prediction
-__Relational Stock Ranking (RSR)__ is a new deep learning solution for stock prediction developed by the authors of [this paper](https://arxiv.org/pdf/1809.09441.pdf). The paper contributes the following:
-* A proposal for a novel neural network-based framework, RSR, to solve the stock prediction problem in a learning-to-rank fashion
-* A proposal for a new component in the neural network modeling, called __Temporal Graph Convolution (TGC)__ that explicitly and quickly captures the domain knowledge of stock relations
-* A demonstration of the effectiveness on these proposals on two real-world stock markets, NYSE and NASDAQ, that will be described later in this blog.  
+
+**Relational Stock Ranking (RSR)** is a new deep learning solution for stock prediction developed by the authors of [this paper](https://arxiv.org/pdf/1809.09441.pdf). The paper contributes the following:
+
+- A proposal for a novel neural network-based framework, RSR, to solve the stock prediction problem in a learning-to-rank fashion
+- A proposal for a new component in the neural network modeling, called **Temporal Graph Convolution (TGC)** that explicitly and quickly captures the domain knowledge of stock relations
+- A demonstration of the effectiveness on these proposals on two real-world stock markets, NYSE and NASDAQ, that will be described later in this blog.
 
 In this blog post, we will discuss the relevance of the paper, introduce the data used and how it was loaded into the codebase, and describe the methodology used in the experiment. After this, we will describe how to train a model of Rank LSTM and a model of RSR, then evaluate those models, using the code from the paper as a guide.
 
 ## Table of Contents
-* [Relevance](#relevance)
-* [The NYSE and NASDAQ Data](#the-nyse-and-nasdaq-data)
-    * [Sequential Data](#sequential-data)
-    * [Relational Data](#relational-data)
-* [Methodology](#methodology)
-* [Training the Model](#training-the-model)
-    * [Training the Rank_LSRM Model](#training-the-rank_lsrm-model)
-    * [Training the RSR Model](#training-the-relational-stock-ranking-model)
-* [Evaluating the Models](#evaluating-the-models)
-* [Summary](#summary)
+
+- [Relevance](#relevance)
+- [The NYSE and NASDAQ Data](#the-nyse-and-nasdaq-data)
+  - [Sequential Data](#sequential-data)
+  - [Relational Data](#relational-data)
+- [Methodology](#methodology)
+- [Training the Model](#training-the-model)
+  - [Training the Rank_LSRM Model](#training-the-rank_lsrm-model)
+  - [Training the RSR Model](#training-the-relational-stock-ranking-model)
+- [Evaluating the Models](#evaluating-the-models)
+- [Summary](#summary)
 
 ## Relevance
-Stock prediction is important because predicting the future trends of a stock helps investor make more informed, better investment decisions. There are existing traditional solutions for stock predictions that are based on time-series analysis, but these methods are stochastic, and hard to optimize without special knowledge of finance. There are also existing neural-network solutions, but these treat stocks as independent of each other and ignore relationships between different stocks in the same industry. RSR outperforms all of these methods with an average return ratio of 98& and 71% on NYSE and NASDAQ data.
+
+There are existing traditional solutions for stock predictions that are based on time-series analysis, but these methods are stochastic, and hard to optimize without special knowledge of finance. There are also existing neural-network solutions, but these treat stocks as independent of each other and ignore relationships between different stocks in the same industry. RSR outperforms all of these methods with an average return ratio of 98& and 71% on NYSE and NASDAQ data.
 
 ## The NYSE and NASDAQ Data
+
 To justify the method proposed by the authors, it was employed on two real-world markets, New York Stock Exchange (NYSE) and NASDAQ Stock Market (NASDAQ). Stocks from these markets that have transaction records between 01/02/2013 and 12/08/2017 were collected. Any stocks that didn't meet these conditions were filtered out of the data set: stocks must have been traded on more than 98% of trading days since 01/02/2013 to ensure no abnormal patterns occur; stocks must have never been traded at less than $5 per share during the collection period to ensure that the selected stocks are not penny stocks. Filtering out the stocks that did not meet these conditions resulted in 1,026 NASDAQ and 1,737 NYSE stocks. Three kinds of data were collected for these stocks: historical price data, sector-industry relations, and Wiki between their companies (ex. supplier-consumer relation).
 
 ### Sequential Data
-The authors aimed to predict a ranking list of stocks for the following trading day, based on the daily historical data in the last _S_ trading days. The code below loads the eod (end-of-day) data used in training:
+
+The authors aimed to predict a ranking list of stocks for the following trading day, based on the daily historical data in the last _S_ trading days. The code below loads the eod (end-of-day) data that was prepared in the `eod.py` file to be used in the model:
 
 ```
 def load_EOD_data(data_path, market_name, tickers, steps=1):
@@ -65,9 +71,11 @@ def load_EOD_data(data_path, market_name, tickers, steps=1):
         eod_data[index, :, :] = single_EOD[:, 1:]
         base_price[index, :] = single_EOD[:, -1]
     return eod_data, masks, ground_truth, base_price
- ```
+```
+
 ### Relational Data
-As discussed, one of the benefits to __RSR__ is that it takes into account the relations between stocks in the same industry. To observe the trends that stocks under the same industry are similar influenced by, the sector-industry relation between stocks was collected. In NASDAQ and NYSE, each stock in the dataset was classified into a sector and industry.  
+
+As discussed, one of the benefits to **RSR** is that it takes into account the relations between stocks in the same industry. To observe the trends that stocks under the same industry are similar influenced by, the sector-industry relation between stocks was collected. In NASDAQ and NYSE, each stock in the dataset was classified into a sector and industry.  
 Additionally, the knowledge base Wikidata contains first-order and second-order company relations. A company _i_ has a first-order relation with company _j_ if there is a statement that _i_ and _j_ are the subject and object, respectively. A company _i_ has a second-order relation with the company _j_ if there is a statement that they share the same object. The example below loads the dataset and summarizes the shape of the loaded dataset.
 
 ```
@@ -80,28 +88,31 @@ def load_relation_data(relation_file):
     mask = np.where(mask_flags, np.ones(rel_shape) * -1e9, np.zeros(rel_shape))
     return relation_encoding, mask
 ```
+
 <img src="/blog_images/industry_relation.png" alt="Schematic of Industry Relation" width="500">
 <img src="/blog_images/wikidata_relation.png" alt="Schematic of Wikidata Relation" width="500">
 
-
 ## Methodology
+
 When conducting their experiment, the authors aimed to answer the following research questions:
+
 1. How is the utility of formulating the stock prediction as a ranking task? Can the RSR solution outperform other prediction solutions?
-1. Do stock relations enhance the neural network-based solution for stock prediction? How effective is the proposed __TGC__ component compared to conventional graph-based learning?
-1. How does the __RSR__ solution perform under different back-testing strategies?  
+1. Do stock relations enhance the neural network-based solution for stock prediction? How effective is the proposed **TGC** component compared to conventional graph-based learning?
+1. How does the **RSR** solution perform under different back-testing strategies?
 
-A buy-hold-sell trading strategy was adopted to evaluate the performance of stock prediction methods regarding revenue. The target of this experiment was to accurately predict the return ratio of stocks and rank the relative order of stocks. Mean Square Error (MSE), Mean Reciprocal Rank (MRR), and cumulative investment return ratio (IRR) were used to report model performance.  
-
+A buy-hold-sell trading strategy was adopted to evaluate the performance of stock prediction methods regarding revenue. The target of this experiment was to accurately predict the return ratio of stocks and rank the relative order of stocks. Mean Square Error (MSE), Mean Reciprocal Rank (MRR), and cumulative investment return ratio (IRR) were used to report model performance.
 
 ## Training the Model
-Before describing how to train the models, let's go over the proposed __RSR__ framework. First, historical time series data of each stock is fed into the __Long Short-Term Memory (LSTM)__ network. The __LSTM__ network is a special type of  Recurrent Neural Networks (RNNs) used in the proposed __RSR__ model to capture the sequential dependencies and learn a stock-wise sequential embedding. Next, a __Temporal Graph Convolution (TGC)__ is devised to account for stock relations in a time-sensitive way. Finally, the concatenation of sequential embeddings and relational embeddings is fed into a fully connected layer to obtain the ranking score of stocks.
+
+Before describing how to train the models, let's go over the proposed **RSR** framework. First, historical time series data of each stock is fed into the **Long Short-Term Memory (LSTM)** network. The **LSTM** network is a special type of Recurrent Neural Networks (RNNs) used in the proposed **RSR** model to capture the sequential dependencies and learn a stock-wise sequential embedding. Next, a **Temporal Graph Convolution (TGC)** is devised to account for stock relations in a time-sensitive way. Finally, the concatenation of sequential embeddings and relational embeddings is fed into a fully connected layer to obtain the ranking score of stocks.
 <img src="/blog_images/RSR.png" alt="RSR Framework" width="500">
 
-
 ### Training the Rank_LSRM Model
-To answer research question one, the Rank_LSTM method is used. However for the purposes of this experiment, the relational embedding layer was removed for this model, i.e. this Rank_LSTM method ignores stock relations. This is done in order to see a basic solution and study primarily stock ranking formulation without the relation aspect.  
 
-The following is the complete constructor for the `RankLSTM` class:
+To answer research question one, the Rank_LSTM method is used. However for the purposes of this experiment, the relational embedding layer was removed for this model, i.e. this Rank_LSTM method ignores stock relations. This is done in order to see a basic solution and study primarily stock ranking formulation without the relation aspect.
+
+The following is the complete constructor for the `RankLSTM` class. It establishes important parameters such as the validation and testing index, epochs, and hyperparameters. It also loads in the tickers that will be used for the model:
+
 ```
     def __init__(self, data_path, market_name, tickers_fname, parameters,
                  steps=1, epochs=50, batch_size=None, gpu=False):
@@ -132,25 +143,9 @@ The following is the complete constructor for the `RankLSTM` class:
 
         self.gpu = gpu
 ```
-Then, add a function for the batch:
-```
-    def get_batch(self, offset=None):
-        if offset is None:
-            offset = random.randrange(0, self.valid_index)
-        seq_len = self.parameters['seq']
-        mask_batch = self.mask_data[:, offset: offset + seq_len + self.steps]
-        mask_batch = np.min(mask_batch, axis=1)
-        return self.eod_data[:, offset:offset + seq_len, :], \
-               np.expand_dims(mask_batch, axis=1), \
-               np.expand_dims(
-                   self.price_data[:, offset + seq_len - 1], axis=1
-               ), \
-               np.expand_dims(
-                   self.gt_data[:, offset + seq_len + self.steps - 1], axis=1
-               )
-```
 
-Add the function for training the model:
+This next function is the main training function, which runs the training cycle for the model. It first initializes the LSTM ranking layer that will be used for training, along with placeholder tensors to input the data into. Then, the model is trained for multiple epochs, capturing key metrics in the process to display the training progress. Finally, the best metrics are returned at the end of the function.
+
 ```
 def train(self):
         if self.gpu == True:
@@ -417,16 +412,17 @@ def train(self):
                best_test_pred, best_test_gt, best_test_mask
 ```
 
-Update the model parameters:
+Then, update the model parameters.
+
 ```
     def update_model(self, parameters):
         for name, value in parameters.items():
             self.parameters[name] = value
         return True
-
 ```
 
-After completing the RankLSTM class, then add the driver code:
+After completing the RankLSTM class, we can run driver code in the main function, accepting command line args to modify how the model is run:
+
 ```
 if __name__ == '__main__':
     desc = 'train a rank lstm model'
@@ -466,14 +462,16 @@ if __name__ == '__main__':
     )
     pred_all = rank_LSTM.train()
 ```
-Rank_LSTM outperforms __State Frequency Memory (SFM)__, which is a state-of-the-art neural network-based solution that models the historical data in a recurrent fashion. Rank_LSM also outperforms vanilla __LSTM__ - this performance verifies the advantage of the stock ranking solutions and answers research question 1 that stock ranking is a promising formulation of stock prediction. However, its performance on NYSE is worse than SFM, perhaps because minimizing the combination of point-wise and pair-wise losses leads to a tradeoff between accurately predicting absolute value of return ratios.
+
+Rank_LSTM outperforms **State Frequency Memory (SFM)**, which is a state-of-the-art neural network-based solution that models the historical data in a recurrent fashion. Rank_LSM also outperforms vanilla **LSTM** - this performance verifies the advantage of the stock ranking solutions and answers research question 1 that stock ranking is a promising formulation of stock prediction. However, its performance on NYSE is worse than SFM, perhaps because minimizing the combination of point-wise and pair-wise losses leads to a tradeoff between accurately predicting absolute value of return ratios.
 
 <img src="/blog_images/rank_lstm_performance.png" alt="Performance comparison of Rank_LSTM, SFM, and LSTM regarding IRR" width="800">
 
-
 ### Training the Relational Stock Ranking Model
+
 To answer research question 2, the authors studied the effect of industry relations between stocks.  
-The code for this model is very similar to the previous Rank_LSRM model, but with the relation data integrated. The following is the constructor for the `ReRaLSTM` class:
+The code for this model is very similar to the previous Rank_LSRM model, but with the relation data integrated. The following is the constructor for the `ReRaLSTM` class, with essentially the same important params established here as `RankLSTM`:
+
 ```
     def __init__(self, data_path, market_name, tickers_fname, relation_name,
                  emb_fname, parameters, steps=1, epochs=50, batch_size=None, flat=False, gpu=False, in_pro=False):
@@ -528,25 +526,8 @@ The code for this model is very similar to the previous Rank_LSRM model, but wit
         self.gpu = gpu
 ```
 
-Then, add the `get_batch` function - this is very similar to the `get_batch` function in the Rank_LSTM class we saw earlier, but does have a one-line difference:
-```
-    def get_batch(self, offset=None):
-        if offset is None:
-            offset = random.randrange(0, self.valid_index)
-        seq_len = self.parameters['seq']
-        mask_batch = self.mask_data[:, offset: offset + seq_len + self.steps]
-        mask_batch = np.min(mask_batch, axis=1)
-        return self.eod_data[:, offset:offset + seq_len, :], \
-               np.expand_dims(mask_batch, axis=1), \
-               np.expand_dims(
-                   self.price_data[:, offset + seq_len - 1], axis=1
-               ), \
-               np.expand_dims(
-                   self.gt_data[:, offset + seq_len + self.steps - 1], axis=1
-               )
-```
+Then, add the `train` function to the class. In a similar fashion to the `RankLSTM` train function, this function establishes the model (in this case the TGC section), and then runs the training cycle on this created model:
 
-Then, add the `train` function to the class:
 ```
 def train(self):
         if self.gpu == True:
@@ -828,7 +809,9 @@ def train(self):
         return best_valid_pred, best_valid_gt, best_valid_mask, \
                best_test_pred, best_test_gt, best_test_mask
 ```
+
 Then, update the model parameters (this is the same `update_model` function as the one in the Rank_LSTM class)
+
 ```
     def update_model(self, parameters):
         for name, value in parameters.items():
@@ -836,7 +819,8 @@ Then, update the model parameters (this is the same `update_model` function as t
         return True
 ```
 
-Finally, after finishing the `ReRaLSTM` class, add the driver code:
+Finally, after finishing the `ReRaLSTM` class, add the driver code, accepting various command line args to customize the run:
+
 ```
 if __name__ == '__main__':
     desc = 'train a relational rank lstm model'
@@ -890,19 +874,22 @@ if __name__ == '__main__':
 
     pred_all = RR_LSTM.train()
 ```
-Taking industry relations into account was more beneficial to stock ranking for NYSE than it was or NASDAQ, since NASDAQ is much more volatile and dominated by short-term factors. This model was compared to the __Graph Convolutional Network (GCN)__ method, a state-of-the-art graph-based learning method - this replaced the __Temporal Graph Convolution (TGC)__ layer in the RSR model. Another comparison was made to __Graph-based Ranking (GBR)__ - the graph regularization term was added to the loss function of __Rank_LSTM__. The authors found that __RSR_E__ (RSR with explicit modeling) and __RSR_I__ (RSR with implicit modeling) achieve improvement over both GCN and GBR, verifying the effectiveness of the proposed __TGC__ component.
+
+Taking industry relations into account was more beneficial to stock ranking for NYSE than it was or NASDAQ, since NASDAQ is much more volatile and dominated by short-term factors. This model was compared to the **Graph Convolutional Network (GCN)** method, a state-of-the-art graph-based learning method - this replaced the **Temporal Graph Convolution (TGC)** layer in the RSR model. Another comparison was made to **Graph-based Ranking (GBR)** - the graph regularization term was added to the loss function of **Rank_LSTM**. The authors found that **RSR_E** (RSR with explicit modeling) and **RSR_I** (RSR with implicit modeling) achieve improvement over both GCN and GBR, verifying the effectiveness of the proposed **TGC** component.
 
 <img src="/blog_images/industry_relations_performance.png" alt="Back-testing procedure of relational ranking methods with industry relations regarding IRR" width="800">
 
-When considering the Wiki relation of stocks, the __RSR_E__ and __RSR_I__ achieve the best performance, further
-demonstrating the effectiveness of the __TGC__ component.
+When considering the Wiki relation of stocks, the **RSR_E** and **RSR_I** achieve the best performance, further
+demonstrating the effectiveness of the **TGC** component.
 
 <img src="/blog_images/wiki_relations_performance.png" alt="Performance comparison of relational ranking methods with Wiki relations regarding IRR" width="800">
 
 ## Evaluating the Models
-The performance of the proposed methods was investigated under three different back-testing strategies, __Top1__, __Top5__, and __Top10__, buying stocks with top-1, 5, 10 highest expected revenue, respectively.  
 
-The following is the complete code for the evaluator:
+The performance of the proposed methods was investigated under three different back-testing strategies, **Top1**, **Top5**, and **Top10**, buying stocks with top-1, 5, 10 highest expected revenue, respectively.
+
+The following is the complete code for the evaluator. This evaluate function is used in the model files to backtest and fully calculate the analysis metrics that can be used for evaluation:
+
 ```
 def evaluate(prediction, ground_truth, mask, report=False):
     assert ground_truth.shape == prediction.shape, 'shape mis-match'
@@ -987,13 +974,62 @@ def evaluate(prediction, ground_truth, mask, report=False):
     # performance['btl10'] = bt_long10
     return performance
 ```
-__RSR_I__ fails to achieve the expected performance when ranking stocks in NASDAq and modeling their industry relations (NASDAQ-Industry setting), indicating less effectiveness of industry relations on NASDAQ. In other cases, the performance of each strategy is __Top1__>__Top5__>__Top10__. This could be because the ranking algorithm could accurately rank the relative order of stocks regarding future return ratios. Once the order is accurate, buying and selling the stock with higher expected profit would achieve higher cumulative return ratio.
+
+**RSR_I** fails to achieve the expected performance when ranking stocks in NASDAq and modeling their industry relations (NASDAQ-Industry setting), indicating less effectiveness of industry relations on NASDAQ. In other cases, the performance of each strategy is **Top1**>**Top5**>**Top10**. This could be because the ranking algorithm could accurately rank the relative order of stocks regarding future return ratios. Once the order is accurate, buying and selling the stock with higher expected profit would achieve higher cumulative return ratio.
 
 <img src="/blog_images/backtesting.png" alt=". Comparison on back-testing strategies (Top1, Top5, and Top10) w.r.t. IRR based on prediction of
 RSR_I" width="800">
 
 ## Summary
-In this blog post, you learned about the propose method __RSR__ for predicting stocks, and why it is superior to existing solutions. Specifically, you learned:
-* How to train a model to study stock ranking formation
-* How to train a model to examine the effect of industry relations
-* How to use back-testing strategies to evaluate the performance of those models
+
+In this blog post, you learned about the propose method **RSR** for predicting stocks, and why it is superior to existing solutions. Specifically, you learned:
+
+- How to train a model to study stock ranking formation
+- How to train a model to examine the effect of industry relations
+- How to use back-testing strategies to evaluate the performance of those models
+  Relational Stock Ranking (RSR) is a new deep learning solution for stock prediction developed by the authors of [this paper](https://arxiv.org/pdf/1809.09441.pdf). There are traditional solutions for stock predictions that are based on time-series analysis, but these methods are stochastic, and hard to optimize without special knowledge of finance. There are also existing neural-network solutions, but these treat stocks as independent of each other and ignore relationships between different stocks in the same industry. RSR outperforms all of these methods with an average return ratio of 98& and 71% on NYSE and NASDAQ data.
+
+## The NYSE and NASDAQ Data
+
+To justify the method proposed by the authors, it was employed on two real-world markets, New York Stock Exchange (NYSE) and NASDAQ Stock Market (NASDAQ). Stocks from these markets that have transaction records between 01/02/2013 and 12/08/2017 were collected. Any stocks that didn't meet these conditions were filtered out of the data set: stocks must have been traded on more than 98% of trading days since 01/02/2013 to ensure no abnormal patterns occur; stocks must have never been traded at less than $5 per share during the collection period to ensure that the selected stocks are not penny stocks. Filtering out the stocks that did not meet these conditions resulted in 1,026 NASDAQ and 1,737 NYSE stocks. Three kinds of data were collected for these stocks: historical price data, sector-industry relations, and Wiki between their companies (ex. supplier-consumer relation).
+For sequential data, the authors aimed to predict a ranking list of stocks for the following trading day, based on the daily historical data in the last _S_ trading days. The code below loads the eod (end-of-day) data used in training:
+
+```
+def load_EOD_data(data_path, market_name, tickers, steps=1):
+    eod_data = []
+    masks = []
+    ground_truth = []
+    base_price = []
+    for index, ticker in enumerate(tickers):
+        single_EOD = np.genfromtxt(
+            os.path.join(data_path, market_name + '_' + ticker + '_1.csv'),
+            dtype=np.float32, delimiter=',', skip_header=False
+        )
+        if market_name == 'NASDAQ':
+            # remove the last day since lots of missing data
+            single_EOD = single_EOD[:-1, :]
+        if index == 0:
+            print('single EOD data shape:', single_EOD.shape)
+            eod_data = np.zeros([len(tickers), single_EOD.shape[0],
+                                 single_EOD.shape[1] - 1], dtype=np.float32)
+            masks = np.ones([len(tickers), single_EOD.shape[0]],
+                            dtype=np.float32)
+            ground_truth = np.zeros([len(tickers), single_EOD.shape[0]],
+                                    dtype=np.float32)
+            base_price = np.zeros([len(tickers), single_EOD.shape[0]],
+                                  dtype=np.float32)
+        for row in range(single_EOD.shape[0]):
+            if abs(single_EOD[row][-1] + 1234) < 1e-8:
+                masks[index][row] = 0.0
+            elif row > steps - 1 and abs(single_EOD[row - steps][-1] + 1234) \
+                    > 1e-8:
+                ground_truth[index][row] = \
+                    (single_EOD[row][-1] - single_EOD[row - steps][-1]) / \
+                    single_EOD[row - steps][-1]
+            for col in range(single_EOD.shape[1]):
+                if abs(single_EOD[row][col] + 1234) < 1e-8:
+                    single_EOD[row][col] = 1.1
+        eod_data[index, :, :] = single_EOD[:, 1:]
+        base_price[index, :] = single_EOD[:, -1]
+    return eod_data, masks, ground_truth, base_price
+```
