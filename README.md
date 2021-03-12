@@ -1,4 +1,6 @@
 # Temporal Relational Ranking for Stock Prediction
+Note: The data was too large to be uploaded to this repository, please add the Historical Stock Prices data when grading this project.  
+The video for our replication project presentation can be found [here](https://youtu.be/6dDJGDX1w1g).  
 
 **Relational Stock Ranking (RSR)** is a new deep learning solution for stock prediction developed by the authors of [this paper](https://arxiv.org/pdf/1809.09441.pdf). The paper contributes the following:
 
